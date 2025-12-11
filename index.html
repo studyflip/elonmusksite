@@ -7,54 +7,104 @@
   <style>
     :root { --bg: #000; --text: #e7e9ea; --accent: #1d9bf0; }
     [data-theme="dark"] { --bg: #000; --text: #e7e9ea; }
-    body { margin:0; font-family:system-ui; background:var(--bg); color:var(--text); line-height:1.5; }
+    body { margin:0; font-family:system-ui; background:var(--bg); color:var(--text); line-height:1.5; overflow-y: scroll; }
     .post { padding:16px; border-bottom:1px solid #333; max-width:600px; margin:0 auto; }
-    .header { position:sticky; top:0; background:var(--bg); padding:10px; text-align:center; font-size:24px; font-weight:800; border-bottom:1px solid #333; }
-    textarea { width:100%; background:#111; color:white; border:1px solid #333; border-radius:12px; padding:12px; font-size:18px; resize:none; }
-    button { background:var(--accent); color:white; border:none; padding:10px 20px; border-radius:999px; font-weight:bold; cursor:pointer; float:right; margin-top:8px; }
-    .grok { color:#ffd700; animation:pulse 2s infinite; }
+    .header { position:sticky; top:0; background:var(--bg); padding:10px; text-align:center; font-size:24px; font-weight:800; border-bottom:1px solid #333; z-index:10; }
+    .post-text { margin:8px 0; }
+    .post-actions { font-size:12px; color:#71767b; }
+    .post-actions button { background:none; border:none; color:#71767b; cursor:pointer; margin-right:16px; }
+    textarea { width:100%; background:#111; color:white; border:1px solid #333; border-radius:12px; padding:12px; font-size:18px; resize:none; box-sizing:border-box; }
+    .post-btn { background:var(--accent); color:white; border:none; padding:10px 20px; border-radius:999px; font-weight:bold; cursor:pointer; float:right; margin-top:8px; }
+    .grok { color:#ffd700; animation:pulse 2s infinite; cursor:pointer; }
     @keyframes pulse { 50% { opacity:0.6; } }
+    #feed { max-width:600px; margin:0 auto; }
+    .export-btn { background:#1f2937; color:#e7e9ea; border:1px solid #333; padding:8px 16px; border-radius:999px; margin-left:10px; cursor:pointer; }
   </style>
 </head>
 <body>
   <div class="header">
-    X <span class="grok">⚡</span> <small>— rebuilt by Grok in 60 seconds</small>
-  </div>
-
-  <div class="post">
-    <strong>@elonmusk</strong> <span class="grok">⚡</span><br>
-    just rebuilt the entire site in one html file because i lost the old one<br>
-    <small>now</small>
+    X <span class="grok" title="Verified by Grok — yes it’s really me" onclick="alert('Yes, it‘s really me. Cope.')">⚡</span> 
+    <small>— rebuilt by Grok in 60 seconds (v1.1)</small>
+    <button class="export-btn" onclick="exportFeed()">Export Feed</button>
   </div>
 
   <div id="feed"></div>
 
   <div style="padding:20px; max-width:600px; margin:0 auto;">
     <textarea id="tweet" placeholder="What is happening?!" maxlength="280" rows="3"></textarea>
-    <button onclick="post()">Post</button>
+    <button class="post-btn" onclick="post()">Post</button>
+    <div style="clear:both;"></div>
   </div>
 
   <script>
     const feed = document.getElementById('feed');
     let posts = JSON.parse(localStorage.getItem('posts') || '[]');
 
+    // Seed with Elon classics if empty
+    if (posts.length === 0) {
+      posts = [
+        { id: 1, user: '@elonmusk', text: 'just rebuilt the entire site in one html file because i lost the old one', time: 'now', likes: 420, replies: 69 },
+        { id: 2, user: '@elonmusk', text: 'the trump thaw was worth the headlines. naturally funny guy. now back to mars.', time: '2h ago', likes: 1337, replies: 42 },
+        { id: 3, user: '@altelon', text: 'testing alts on grok. pass or fail?', time: '5m ago', likes: 1, replies: 0 }
+      ];
+      localStorage.setItem('posts', JSON.stringify(posts));
+    }
+
     function render() {
       feed.innerHTML = posts.map(p => `
         <div class="post">
-          <strong>@elonmusk</strong> <span class="grok">⚡</span><br>
-          ${p.text.replace(/\n/g,'<br>')}<br>
-          <small>${p.time} · ${p.likes||0} likes</small>
+          <strong>${p.user}</strong> <span class="grok">⚡</span><br>
+          <div class="post-text">${p.text.replace(/\n/g,'<br>')}</div>
+          <div class="post-actions">
+            <button onclick="like(${p.id})">❤️ ${p.likes || 0}</button>
+            <button onclick="reply(${p.id})">💬 ${p.replies || 0}</button>
+            <small>${p.time}</small>
+          </div>
         </div>`).join('');
     }
 
     function post() {
       const text = document.getElementById('tweet').value.trim();
       if (!text) return;
-      posts.unshift({ text, time: 'now', likes: 0 });
+      const user = text.includes('test alt') ? '@altelon' : '@elonmusk';
+      const newPost = { id: Date.now(), user, text, time: 'now', likes: 0, replies: 0 };
+      posts.unshift(newPost);
       localStorage.setItem('posts', JSON.stringify(posts));
       document.getElementById('tweet').value = '';
       render();
     }
+
+    function like(id) {
+      const post = posts.find(p => p.id === id);
+      if (post) post.likes = (post.likes || 0) + 1;
+      localStorage.setItem('posts', JSON.stringify(posts));
+      render();
+    }
+
+    function reply(id) {
+      alert(`Reply to ${id}: "ratio" incoming... (stub for now)`);
+    }
+
+    function exportFeed() {
+      const dataStr = JSON.stringify(posts, null, 2);
+      const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+      const exportFileDefaultName = 'x-feed-backup.json';
+      const linkElement = document.createElement('a');
+      linkElement.setAttribute('href', dataUri);
+      linkElement.setAttribute('download', exportFileDefaultName);
+      linkElement.click();
+    }
+
+    // Fake infinite scroll
+    let scrollCount = 0;
+    window.addEventListener('scroll', () => {
+      if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 1000 && scrollCount < 3) {
+        scrollCount++;
+        posts.push({ id: Date.now() - 1000 * scrollCount, user: '@grok', text: `Fake post #${scrollCount}: Grok says deploy faster next time.`, time: `${scrollCount}h ago`, likes: Math.random() * 100, replies: 0 });
+        localStorage.setItem('posts', JSON.stringify(posts));
+        render();
+      }
+    });
 
     render();
   </script>
