@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>X</title>
+  <style>
+    :root { --bg: #000; --text: #e7e9ea; --accent: #1d9bf0; }
+    [data-theme="dark"] { --bg: #000; --text: #e7e9ea; }
+    body { margin:0; font-family:system-ui; background:var(--bg); color:var(--text); line-height:1.5; }
+    .post { padding:16px; border-bottom:1px solid #333; max-width:600px; margin:0 auto; }
+    .header { position:sticky; top:0; background:var(--bg); padding:10px; text-align:center; font-size:24px; font-weight:800; border-bottom:1px solid #333; }
+    textarea { width:100%; background:#111; color:white; border:1px solid #333; border-radius:12px; padding:12px; font-size:18px; resize:none; }
+    button { background:var(--accent); color:white; border:none; padding:10px 20px; border-radius:999px; font-weight:bold; cursor:pointer; float:right; margin-top:8px; }
+    .grok { color:#ffd700; animation:pulse 2s infinite; }
+    @keyframes pulse { 50% { opacity:0.6; } }
+  </style>
+</head>
+<body>
+  <div class="header">
+    X <span class="grok">⚡</span> <small>— rebuilt by Grok in 60 seconds</small>
+  </div>
+
+  <div class="post">
+    <strong>@elonmusk</strong> <span class="grok">⚡</span><br>
+    just rebuilt the entire site in one html file because i lost the old one<br>
+    <small>now</small>
+  </div>
+
+  <div id="feed"></div>
+
+  <div style="padding:20px; max-width:600px; margin:0 auto;">
+    <textarea id="tweet" placeholder="What is happening?!" maxlength="280" rows="3"></textarea>
+    <button onclick="post()">Post</button>
+  </div>
+
+  <script>
+    const feed = document.getElementById('feed');
+    let posts = JSON.parse(localStorage.getItem('posts') || '[]');
+
+    function render() {
+      feed.innerHTML = posts.map(p => `
+        <div class="post">
+          <strong>@elonmusk</strong> <span class="grok">⚡</span><br>
+          ${p.text.replace(/\n/g,'<br>')}<br>
+          <small>${p.time} · ${p.likes||0} likes</small>
+        </div>`).join('');
+    }
+
+    function post() {
+      const text = document.getElementById('tweet').value.trim();
+      if (!text) return;
+      posts.unshift({ text, time: 'now', likes: 0 });
+      localStorage.setItem('posts', JSON.stringify(posts));
+      document.getElementById('tweet').value = '';
+      render();
+    }
+
+    render();
+  </script>
+</body>
+</html>
